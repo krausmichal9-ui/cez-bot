@@ -1,1 +1,1 @@
-web: pip install playwright && playwright install chromium --with-deps && python app.py
+web: playwright install-deps chromium && playwright install chromium && python app.py
