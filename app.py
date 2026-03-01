@@ -190,8 +190,6 @@ async def kresli_polygon(page, presah_px):
     await page.wait_for_timeout(500)
 
 if __name__ == "__main__":
-import os
-port = int(os.environ.get("PORT", 5000))
-import os
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port, debug=False)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
