@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ČEZ Geoportál Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --border: #2a2a32;
+    --accent: #f5620a;
+    --accent2: #ff8c42;
+    --text: #e8e8ed;
+    --muted: #6b6b7a;
+    --success: #3ecf8e;
+    --warning: #f0c040;
+    --error: #ff5555;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,98,10,0.12), transparent);
+    pointer-events: none;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 560px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  h1 {
+    font-size: 1.85rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  h1 span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .subtitle {
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .field-row.full { grid-template-columns: 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    width: 100%;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(245,98,10,0.12);
+  }
+
+  input::placeholder { color: #3a3a45; }
+
+  .btn {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    margin-top: 0.5rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--accent2);
+    box-shadow: 0 4px 20px rgba(245,98,10,0.3);
+  }
+
+  .btn:active:not(:disabled) { transform: scale(0.99); }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .log-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .log-panel.visible { display: block; }
+
+  .log-header {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s infinite;
+  }
+
+  .dot.idle { background: var(--muted); animation: none; }
+  .dot.done { background: var(--success); animation: none; }
+  .dot.error { background: var(--error); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .log-body {
+    padding: 1rem 1.25rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .log-line { color: var(--muted); }
+  .log-line.success { color: var(--success); }
+  .log-line.warning { color: var(--warning); }
+  .log-line.error { color: var(--error); }
+  .log-line.pause { color: var(--accent2); font-weight: 500; }
+  .log-line.url { color: #60a5fa; text-decoration: underline; cursor: pointer; }
+
+  .screenshot-box {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .screenshot-box img {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  .screenshot-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <span class="logo-text">ČEZ Bot</span>
+    </div>
+    <h1>Sdělení o existenci <span>sítí</span></h1>
+    <p class="subtitle">Automatické vyplnění žádosti na Geoportálu ČEZ</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Žadatel</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Jméno</label>
+        <input type="text" id="jmeno" placeholder="Michal" autocomplete="given-name">
+      </div>
+      <div class="field">
+        <label>Příjmení</label>
+        <input type="text" id="prijmeni" placeholder="Kraus" autocomplete="family-name">
+      </div>
+    </div>
+    <div class="field-row full">
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" id="email" placeholder="vas@email.cz" autocomplete="email">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Zájmové území</div>
+    <div class="field-row full">
+      <div class="field">
+        <label>Adresa (obec, ulice, č.p.)</label>
+        <input type="text" id="adresa" placeholder="Slunečná č.p. 316, Ejpovice">
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="btnSpustit" onclick="spustit()">
+    <span>▶</span> Spustit robota
+  </button>
+
+  <div class="log-panel" id="logPanel" style="margin-top:1rem">
+    <div class="log-header">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Probíhá...</span>
+    </div>
+    <div class="log-body" id="logBody"></div>
+    <div class="screenshot-box" id="screenshotBox" style="display:none">
+      <div class="screenshot-label">📋 Rekapitulace žádosti:</div>
+      <img id="screenshotImg" src="" alt="Screenshot rekapitulace">
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentSessionId = null;
+
+  function spustit() {
+    const jmeno = document.getElementById('jmeno').value.trim();
+    const prijmeni = document.getElementById('prijmeni').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const adresa = document.getElementById('adresa').value.trim();
+
+    if (!jmeno || !prijmeni || !email || !adresa) {
+      alert('Vyplň prosím všechna pole.');
+      return;
+    }
+
+    currentSessionId = Date.now().toString();
+
+    document.getElementById('btnSpustit').disabled = true;
+    document.getElementById('logPanel').classList.add('visible');
+    document.getElementById('logBody').innerHTML = '';
+    document.getElementById('screenshotBox').style.display = 'none';
+    document.getElementById('statusDot').className = 'dot';
+    document.getElementById('statusText').textContent = 'Probíhá...';
+
+    fetch('/spustit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jmeno, prijmeni, email, adresa, nazev_stavby: 'Rodinný dům', session_id: currentSessionId })
+    });
+
+    const evtSource = new EventSource('/logy/' + currentSessionId);
+    evtSource.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      addLog(data.msg, data.type);
+
+      if (data.type === 'done') {
+        evtSource.close();
+        document.getElementById('btnSpustit').disabled = false;
+        document.getElementById('statusDot').className = 'dot done';
+        document.getElementById('statusText').textContent = 'Hotovo';
+      }
+      if (data.type === 'error') {
+        evtSource.close();
+        document.getElementById('btnSpustit').disabled = false;
+        document.getElementById('statusDot').className = 'dot error';
+        document.getElementById('statusText').textContent = 'Chyba';
+      }
+    };
+  }
+
+  function addLog(msg, type) {
+    if (type === 'screenshot') {
+      const b64 = msg.replace('SCREENSHOT:', '');
+      document.getElementById('screenshotImg').src = 'data:image/png;base64,' + b64;
+      document.getElementById('screenshotBox').style.display = 'block';
+      return;
+    }
+    const body = document.getElementById('logBody');
+    const line = document.createElement('div');
+    line.className = 'log-line ' + (type || '');
+    if (type === 'url') {
+      const url = msg.replace('🔗 URL: ', '');
+      line.innerHTML = `🔗 <a href="${url}" target="_blank" style="color:#60a5fa">${url}</a>`;
+    } else {
+      line.textContent = msg;
+    }
+    body.appendChild(line);
+    body.scrollTop = body.scrollHeight;
+  }
+</script>
+</body>
+</html>
